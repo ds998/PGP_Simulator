@@ -7,5 +7,6 @@
 	</classpathentry>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="lib" path="//vmware-host/Shared Folders/Desktop/pgp_projekat/workspace/pgp_projekat/bcpg-jdk15to18-168.jar"/>
+	<classpathentry kind="lib" path="//vmware-host/Shared Folders/Desktop/pgp_projekat/workspace/pgp_projekat/bcprov-jdk15on-168.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
