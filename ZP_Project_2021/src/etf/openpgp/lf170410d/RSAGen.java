@@ -117,12 +117,8 @@ public class RSAGen
                 SymmetricKeyAlgorithmTags.IDEA
             });
         signhashgen.setPreferredHashAlgorithms
-            (false, new int[] {
-                HashAlgorithmTags.SHA256,
-                HashAlgorithmTags.SHA1,
-                HashAlgorithmTags.SHA384,
-                HashAlgorithmTags.SHA512,
-                HashAlgorithmTags.SHA224,
+            (false, new int[] {      
+                HashAlgorithmTags.SHA1
             });
         // 3) Request senders add additional checksums to the
         //    message (useful when verifying unsigned messages.)

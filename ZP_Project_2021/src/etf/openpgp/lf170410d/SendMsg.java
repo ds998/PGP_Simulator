@@ -6,6 +6,13 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.SignatureException;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
@@ -17,6 +24,8 @@ import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.openpgp.PGPEncryptedData;
+import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
 
 @SuppressWarnings("serial")
@@ -194,9 +203,32 @@ public class SendMsg extends JFrame {
 				if (key == null) System.out.println("Null");
 				
 				int alg=-1;
-				if (encryption.isSelected()) alg= radioBtnEnc_IDEA.isSelected()? SymmetricKeyAlgorithmTags.IDEA: SymmetricKeyAlgorithmTags.TRIPLE_DES;
+				if (encryption.isSelected()) alg= radioBtnEnc_IDEA.isSelected()? PGPEncryptedData.IDEA: PGPEncryptedData.TRIPLE_DES;
+				//SendMsgUtil.encryptMsg(file,key,radix.isSelected(), zip.isSelected(), alg);
+				OutputStream out = null;
+				/*try {
+					out = new FileOutputStream(file.getName());
+				} catch (FileNotFoundException e2) {
+					// TODO Auto-generated catch block
+					e2.printStackTrace();
+				}
+				String str="hello";
+				try {
+					SendMsgUtil.signFile(file.getAbsolutePath(), out, str.toCharArray());
+				} catch (NoSuchAlgorithmException | NoSuchProviderException | SignatureException | IOException
+						| PGPException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				
+				try {
+					out.close();
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}*/
+				//file = new File(file.getName());
 				SendMsgUtil.encryptMsg(file,key,radix.isSelected(), zip.isSelected(), alg);
-
 			}
 		});
 
