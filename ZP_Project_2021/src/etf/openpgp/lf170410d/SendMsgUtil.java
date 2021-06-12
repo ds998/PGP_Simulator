@@ -17,6 +17,8 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.util.Date;
+import java.util.stream.Stream;
 
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
@@ -59,13 +61,128 @@ public class SendMsgUtil {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-
+		// RADIX **********
 		out = new ArmoredOutputStream(out);
+		
+		//******************************
 		String str="hello";
 		BouncyCastleProvider bc=new BouncyCastleProvider();
+		
+		
+		 int BUFFER_SIZE = 1 << 26;
+		PGPEncryptedDataGenerator encGen = new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(symAlgTag)
+				.setWithIntegrityPacket(true).setSecureRandom(new SecureRandom()).setProvider(bc));
+
+		encGen.addMethod(new JcePublicKeyKeyEncryptionMethodGenerator(key).setProvider(bc));
+		 
+		 /*PGPEncryptedDataGenerator encryptedDataGenerator =
+	                new PGPEncryptedDataGenerator(symAlgTag, withIntegrityCheck, new SecureRandom());
+	            encryptedDataGenerator.AddMethod(encKey);*/
+	            //Stream encryptedOut = encryptedDataGenerator.Open(outputStream, new byte&#91;BUFFER_SIZE&#93;);
+
+
+		OutputStream cOut = null;
 		try {
-			signFile(file.getAbsolutePath(), out, str.toCharArray(), bc);
-		} catch (NoSuchAlgorithmException | NoSuchProviderException | SignatureException | IOException
+			cOut = encGen.open(out, new byte[BUFFER_SIZE]);
+		} catch (IOException | PGPException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
+		}
+		
+
+        PGPCompressedDataGenerator compressedDataGenerator = new PGPCompressedDataGenerator(CompressionAlgorithmTags.ZIP);
+        OutputStream compressedOut=cOut;
+        try {
+			compressedOut = compressedDataGenerator.open(cOut);
+		} catch (IOException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
+		}
+
+		try {
+			 PGPSecretKey      pgpSec = SecretKeyRingCollection.getInstance().get("Name1&Mail1").getSecretKey();
+		        PGPPrivateKey      pgpPrivKey = pgpSec.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().setProvider(bc).build(str.toCharArray()));
+		        PGPSignatureGenerator       sGen = new PGPSignatureGenerator(new JcaPGPContentSignerBuilder(pgpSec.getPublicKey().getAlgorithm(), PGPUtil.SHA1).setProvider(bc));
+		        
+		        sGen.init(PGPSignature.BINARY_DOCUMENT, pgpPrivKey);
+		        
+		        java.util.Iterator<String>    it = pgpSec.getPublicKey().getUserIDs();
+		        if (it.hasNext())
+		        {
+		            PGPSignatureSubpacketGenerator  spGen = new PGPSignatureSubpacketGenerator();
+		            
+		            spGen.setSignerUserID(false, (String)it.next());
+		            sGen.setHashedSubpackets(spGen.generate());
+		        }
+		        
+		       
+		        
+		       // BCPGOutputStream            bOut = new BCPGOutputStream(out);
+		        
+		        sGen.generateOnePassVersion(false).encode(compressedOut);
+		        //************************
+		        
+		        //LITERAL DATA
+		        PGPLiteralDataGenerator literalDataGenerator = new PGPLiteralDataGenerator();
+	            //FileInfo embeddedFile = new FileInfo(file.getName());
+	            //FileInfo actualFile = new FileInfo(file.getAbsolutePath());
+	            // TODO: Use lastwritetime from source file
+		        //literalDataGenerator.op
+	            OutputStream literalOut = literalDataGenerator.open(compressedOut, PGPLiteralData.BINARY,
+	                file.getName(),new Date(file.lastModified()), new byte[BUFFER_SIZE]);
+
+		        
+		        //PGPUtil.writeFileToLiteralData(compressedOut, PGPLiteralData.BINARY, new File(file.getAbsolutePath()));
+	           // Stream literalOut = 
+		        
+		        //******************************
+		        
+
+		        FileInputStream inputStream = new FileInputStream(file);
+	 
+	            byte[] buf = new byte[BUFFER_SIZE];
+	            int len;
+	            while ((len = inputStream.read(buf, 0, buf.length)) > 0)
+	            {
+	                literalOut.write(buf, 0, len);
+	                sGen.update(buf, 0, len);
+	            }
+
+		        
+		        
+		        
+		       // File                        file = new File(fileName);
+		        /*PGPLiteralDataGenerator     lGen = new PGPLiteralDataGenerator();
+		        OutputStream                lOut = lGen.open(bOut, PGPLiteralData.BINARY, file);
+		        FileInputStream             fIn = new FileInputStream(file);
+		        int                         ch;
+		        
+		        while ((ch = fIn.read()) >= 0)
+		        {
+		            cOut.write(ch);
+		            sGen.update((byte)ch);
+		        }*/
+
+		        //lGen.close();
+		        //inputStream.close();
+		        literalOut.close();
+	            literalDataGenerator.close();
+
+		        sGen.generate().encode(compressedOut);
+		        compressedOut.close();
+	            compressedDataGenerator.close();
+	            cOut.close();
+	            encGen.close();
+
+		        inputStream.close();
+		        
+			
+			
+			//signFile(file.getAbsolutePath(), out, str.toCharArray(), bc);
+			
+			
+			
+		} catch (IOException
 				| PGPException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -73,7 +190,7 @@ public class SendMsgUtil {
 		
 		
 		try {
-			byte[] bytes = compressFile(file.getAbsolutePath(), CompressionAlgorithmTags.ZIP);
+			/*byte[] bytes = compressFile(file.getAbsolutePath(), CompressionAlgorithmTags.ZIP);
 
 			PGPEncryptedDataGenerator encGen = new PGPEncryptedDataGenerator(new JcePGPDataEncryptorBuilder(symAlgTag)
 					.setWithIntegrityPacket(true).setSecureRandom(new SecureRandom()).setProvider(bc));
@@ -82,18 +199,13 @@ public class SendMsgUtil {
 
 			OutputStream cOut = encGen.open(out, bytes.length);
 			
-			System.out.println("Pre cOutWrite");
+			System.out.println("Pre cOutWrite");*/
 			
-			cOut.write(bytes);
-			cOut.close();
+			//cOut.write(bytes);
+			//cOut.close();
 			System.out.println("Posle cOutWrite");
 			out.close();
 
-		} catch (PGPException e) {
-			System.err.println(e);
-			if (e.getUnderlyingException() != null) {
-				e.getUnderlyingException().printStackTrace();
-			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
