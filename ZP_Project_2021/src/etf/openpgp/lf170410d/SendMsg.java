@@ -26,7 +26,13 @@ import javax.swing.JTextField;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.openpgp.PGPEncryptedData;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
+import org.bouncycastle.openpgp.PGPSecretKey;
+import org.bouncycastle.openpgp.PGPSignatureGenerator;
+import org.bouncycastle.openpgp.PGPUtil;
+import org.bouncycastle.openpgp.operator.jcajce.JcaPGPContentSignerBuilder;
+import org.bouncycastle.openpgp.operator.jcajce.JcePBESecretKeyDecryptorBuilder;
 
 @SuppressWarnings("serial")
 public class SendMsg extends JFrame {
@@ -44,6 +50,7 @@ public class SendMsg extends JFrame {
 	private JCheckBox radix;
 	private JFileChooser fc;
 	private JTextField textField_PKey;
+	private JTextField textField_Sign_Key;
 
 	public SendMsg() {
 		setTitle("Key_Generator");
@@ -108,10 +115,10 @@ public class SendMsg extends JFrame {
 		 */
 
 		textField_PKey = new JTextField();
-		textField_PKey.setBounds(30, 190, 130, 20);
+		textField_PKey.setBounds(45, 190, 230, 25);
 		getContentPane().add(textField_PKey);
 		textField_PKey.setColumns(10);
-
+		/*
 		JButton btnchosePKey = new JButton("Chose Key");
 
 		btnchosePKey.setFont(new Font("Arial", Font.BOLD, 10));
@@ -124,28 +131,43 @@ public class SendMsg extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 
 			}
-		});
+		});*/
 
 		/*****************************************
 		 * 
 		 ********************************************/
-
+		JLabel lblSignKey = new JLabel("Select Sign Key");
+		lblSignKey.setBounds(80, 280, 186, 24);
+		lblSignKey.setFont(new Font("Times New Roman", 1, 18));
+		getContentPane().add(lblSignKey);
+		
+		textField_Sign_Key = new JTextField();
+		textField_Sign_Key.setBounds(45, 320, 230, 25);
+		getContentPane().add(textField_Sign_Key);
+		textField_Sign_Key.setColumns(10);
+	
+	
 		authentication = new JCheckBox("Authentication");
 		authentication.setFont(new Font("Arial", Font.PLAIN, 15));
 		authentication.setSize(250, 20);
-		authentication.setLocation(150, 220);
+		authentication.setLocation(150, 240);
 		add(authentication);
+		
+		
+		/******************************
+		 * 
+		 ******************************/
 
 		zip = new JCheckBox("Zip");
 		zip.setFont(new Font("Arial", Font.PLAIN, 15));
 		zip.setSize(250, 20);
-		zip.setLocation(150, 280);
+		zip.setLocation(530, 80);
 		add(zip);
 
 		radix = new JCheckBox("Radix64");
 		radix.setFont(new Font("Arial", Font.PLAIN, 15));
 		radix.setSize(250, 20);
-		radix.setLocation(150, 310);
+		radix.setLocation(530, 120);
 		add(radix);
 
 		/*
@@ -158,7 +180,7 @@ public class SendMsg extends JFrame {
 		getContentPane().add(textField_File);
 		textField_File.setColumns(10);
 
-		JButton btnchoseFile = new JButton("choseFile");
+		JButton btnchoseFile = new JButton("ChooseFile");
 
 		btnchoseFile.setFont(new Font("Arial", Font.BOLD, 10));
 		btnchoseFile.setBounds(600, 30, 89, 28);
@@ -199,36 +221,29 @@ public class SendMsg extends JFrame {
 
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				PGPPublicKey key= PublicKeyRingCollection.getInstance().get("Name1&Mail1");
-				if (key == null) System.out.println("Null");
+				PGPPublicKey public_key= PublicKeyRingCollection.getInstance().get("Name1&Mail1");
+				if (public_key == null) System.out.println("Null");
 				
 				int alg=-1;
 				if (encryption.isSelected()) alg= radioBtnEnc_IDEA.isSelected()? PGPEncryptedData.IDEA: PGPEncryptedData.TRIPLE_DES;
-				//SendMsgUtil.encryptMsg(file,key,radix.isSelected(), zip.isSelected(), alg);
-				OutputStream out = null;
-				/*try {
-					out = new FileOutputStream(file.getName());
-				} catch (FileNotFoundException e2) {
-					// TODO Auto-generated catch block
-					e2.printStackTrace();
-				}
-				String str="hello";
-				try {
-					SendMsgUtil.signFile(file.getAbsolutePath(), out, str.toCharArray());
-				} catch (NoSuchAlgorithmException | NoSuchProviderException | SignatureException | IOException
-						| PGPException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
+				
+				PGPPrivateKey private_key=null;
+				PGPSecretKey pgpSec= null;
+				if (authentication.isSelected()) {
+					pgpSec = SecretKeyRingCollection.getInstance().get("Name1&Mail1").getSecretKey();
+					String str="hello";
+					try {
+						private_key = pgpSec
+								.extractPrivateKey(new JcePBESecretKeyDecryptorBuilder().build(str.toCharArray()));
+					} catch (PGPException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+					PGPSignatureGenerator sGen = new PGPSignatureGenerator(
+							new JcaPGPContentSignerBuilder(pgpSec.getPublicKey().getAlgorithm(), PGPUtil.SHA1));
 				}
 				
-				try {
-					out.close();
-				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}*/
-				//file = new File(file.getName());
-				SendMsgUtil.encryptMsg(file,key,radix.isSelected(), zip.isSelected(), alg);
+				SendMsgUtil.encryptMsg(file,public_key,radix.isSelected(), zip.isSelected(),encryption.isSelected(), authentication.isSelected(), alg,private_key,pgpSec);
 			}
 		});
 

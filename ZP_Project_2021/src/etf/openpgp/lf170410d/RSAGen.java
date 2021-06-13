@@ -41,22 +41,16 @@ public class RSAGen
         char pas[] = {'h', 'e', 'l', 'l', 'o'};
         PGPKeyRingGenerator krgen = generateKeyRingGenerator
             (email, pas,keyLength);
-
+        
         // Generate public key ring, dump to file.
         PGPPublicKeyRing pkr = krgen.generatePublicKeyRing();
         PublicKeyRingCollection.getInstance().putRing(pkr);
-        /*BufferedOutputStream pubout = new BufferedOutputStream
-            (new FileOutputStream("dummy.pkr"));
-        //pkr.encode(pubout);
-        pubout.close();*/
+       
 
         // Generate private key, dump to file.
         PGPSecretKeyRing skr = krgen.generateSecretKeyRing();
         SecretKeyRingCollection.getInstance().putRing(skr);
-        /*BufferedOutputStream secout = new BufferedOutputStream
-            (new FileOutputStream("dummy.skr"));
-        //skr.encode(secout);
-        secout.close();*/
+       
     }
 
     public final static PGPKeyRingGenerator generateKeyRingGenerator
@@ -158,7 +152,7 @@ public class RSAGen
              (rsakp_sign.getPublicKey().getAlgorithm(),
               HashAlgorithmTags.SHA1),
              pske);
-
+        
         // Add our encryption subkey, together with its signature.
         keyRingGen.addSubKey
             (rsakp_enc, enchashgen.generate(), null);
